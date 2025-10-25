@@ -1,31 +1,25 @@
-# ETAPA 1: Compilación (Builder Stage)
-# Usa la imagen JDK 21 para compilar el proyecto
+# ----------------------------------------------------------------------
+# ETAPA 1: Compilación (BUILDER STAGE)
+# Usa la imagen JDK 21 de Maven para compilar el proyecto
+# ----------------------------------------------------------------------
 FROM maven:3.9.6-eclipse-temurin-21 AS builder
+
+# Etiqueta estándar para metadatos del contenedor
+LABEL maintainer="eshan@ipagos.lat"
 
 # Establecer el directorio de trabajo dentro del contenedor
 WORKDIR /app
 
-# Copiar el archivo de configuración de Maven y el código fuente
+# Copiar el archivo de configuración de Maven (para manejar dependencias)
 COPY pom.xml .
+
+# Descargar dependencias para que el siguiente paso se beneficie de la caché de Docker
+# Si las dependencias cambian, solo se reconstruye esta capa.
+RUN mvn dependency:go-offline
+
+# Copiar el código fuente restante
 COPY src ./src
 
 # Empaquetar la aplicación Spring Boot como un JAR ejecutable
-# El nombre del JAR resultante será 'morganainvoices-0.0.1-SNAPSHOT.jar' o similar
-RUN mvn clean package -DskipTests
-
-# ETAPA 2: Imagen Final (Runtime Stage)
-# Usamos una imagen base más ligera (JRE)
-FROM eclipse-temurin:21-jre-jammy
-
-# Establecer el directorio de trabajo
-WORKDIR /app
-
-# Copiar el JAR compilado de la etapa 'builder'
-# Copiamos el archivo JAR resultante (asumiendo que Maven lo nombra con el comodín)
-COPY --from=builder /app/target/*.jar morganainvoices.jar
-
-# Exponer el puerto de la aplicación
-EXPOSE 8080
-
-# Comando de ejecución
-ENTRYPOINT ["java", "-jar", "morganainvoices.jar"]
+# El comando DEBE ejecutarse con éxito para que la siguiente etapa funcione
+RUN mvn clean package -DskipTests -Dmaven.wagon.http.ssl.insecure=true
