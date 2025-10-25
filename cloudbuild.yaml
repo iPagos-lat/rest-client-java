@@ -6,7 +6,7 @@ steps:
     - '-t' 
     - 'us-central1-docker.pkg.dev/morganainvoice-medicos/morgana-repo/java-app:v1.0'
     - '-f' 
-    - 'app.dockerfile' 
+    - 'Dockerfile' 
     - '.' 
 images:
 - 'us-central1-docker.pkg.dev/morganainvoice-medicos/morgana-repo/java-app:v1.0'
