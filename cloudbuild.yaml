@@ -1,5 +1,15 @@
 steps:
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'us-central1-docker.pkg.dev/morganainvoice-medicos/morgana-repo/java-app:v1.0', '-f', 'app.dockerfile', '.']
+  id: 'Construir Imagen Java'
+  args: 
+    - 'build'
+    - '-t' 
+    - 'us-central1-docker.pkg.dev/morganainvoice-medicos/morgana-repo/java-app:v1.0'
+    - '-f' 
+    - 'app.dockerfile' 
+    - '.' 
 images:
 - 'us-central1-docker.pkg.dev/morganainvoice-medicos/morgana-repo/java-app:v1.0'
+# NUEVA SECCIÓN: Opciones para configurar el logging
+options:
+  logging: CLOUD_LOGGING_ONLY
