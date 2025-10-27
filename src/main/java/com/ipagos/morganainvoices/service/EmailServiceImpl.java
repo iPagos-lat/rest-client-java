@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 
 import com.ipagos.morganainvoices.api.beans.CreateInvoiceWOSending.EmailRequest;
 
+// Importamos el DTO
+
+
 @Service
 public class EmailServiceImpl implements EmailService {
 
@@ -18,9 +21,6 @@ public class EmailServiceImpl implements EmailService {
 
     @Autowired
     private JavaMailSender mailSender; // Utiliza tu configuración SMTP
-
-    // Interfaz del servicio de correo (asume que ya está definida)
-    // public interface EmailService { void sendAppointmentConfirmation(...); }
 
     @Override
     public void sendAppointmentConfirmation(
@@ -31,7 +31,7 @@ public class EmailServiceImpl implements EmailService {
             String time, 
             String amount, 
             String paymentLink,
-            String dueDate) 
+            String dueDate) // Este parámetro (dueDate) ya no se usará en la plantilla, pero se mantiene por la firma del método.
     {
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -42,6 +42,7 @@ public class EmailServiceImpl implements EmailService {
             helper.setTo(toEmail);
             helper.setSubject("Confirmación de cita médica y enlace de pago");
 
+            // Pasamos el dueDate, aunque el HTML lo ignore
             String htmlContent = buildEmailHtml(patientName, doctorName, date, time, amount, paymentLink, dueDate);
             helper.setText(htmlContent, true); // true indica contenido HTML
 
@@ -64,7 +65,7 @@ public class EmailServiceImpl implements EmailService {
             String time, 
             String amount, 
             String paymentLink, 
-            String dueDate) {
+            String dueDate) { // dueDate es ignorado
         
         // Colores corporativos basados en el análisis del HTML de iPagos/Sinaptikon
         final String COLOR_CORPORATIVO = "#3299CD"; 
@@ -124,7 +125,10 @@ public class EmailServiceImpl implements EmailService {
             "            <p>Al momento de confirmar tu pago, te haremos llegar la liga de videoconferencia en la cual podrás recibir tu consulta en línea.</p>" +
             "            " +
             "            " +
-            "            <p style='color: " + COLOR_ADVERTENCIA + "; font-weight: bold; padding: 10px; background-color: #FEEAE8; border-radius: 4px;'>Para confirmar tu espacio y no perder el espacio disponible, es necesario realizar el pago antes del <strong>" + dueDate + "</strong>.</p>" +
+            "            <!-- INICIO DE LA CORRECCIÓN: Texto fijo en lugar de la variable dueDate -->" +
+            "            <p style='color: " + COLOR_ADVERTENCIA + "; font-weight: bold; padding: 10px; background-color: #FEEAE8; border-radius: 4px;'>Para confirmar tu espacio y no perder el espacio disponible, es necesario realizar el pago en las siguientes 24 horas.</p>" +
+            "            <!-- FIN DE LA CORRECCIÓN -->" +
+            "            " +
             "            <p style='font-size: 0.9em;'>En caso de no recibir el pago en ese plazo, la cita será cancelada automáticamente y deberás reprogramarla según disponibilidad.</p>" +
             "        " +
             "        </div>" +
@@ -143,9 +147,15 @@ public class EmailServiceImpl implements EmailService {
         return template;
     }
 
-	@Override
-	public boolean sendEmail(EmailRequest request) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    /**
+     * Implementación del método genérico de la interfaz (requerido para compilar).
+     * Este método NO se usa en el flujo de /enviar-factura.
+     */
+    @Override
+    public boolean sendEmail(EmailRequest request) {
+        // Lógica de depuración simple
+        log.warn("Método 'sendEmail' genérico fue llamado, pero no está implementado.");
+        // TODO: Implementar si se necesita un envío de correo genérico.
+        return false;
+    }
 }
