@@ -1,6 +1,18 @@
 package com.ipagos.morganainvoices.controller;
 
 import com.ipagos.morganainvoices.service.EmailService;
+import com.ipagos.morganainvoices.service.CreateInvoiceWOSendingService; 
+
+// Importaciones de DTOs de Cybersource (necesarias para construir el request)
+import com.ipagos.morganainvoices.api.beans.CreateInvoiceWOSending.CreateInvoiceWOSendingRequest;
+import com.ipagos.morganainvoices.api.beans.CreateInvoiceWOSending.CreateInvoiceWOSendingResponse;
+import com.ipagos.morganainvoices.api.beans.CreateInvoiceWOSending.CustomerInformation;
+import com.ipagos.morganainvoices.api.beans.CreateInvoiceWOSending.MerchantDefinedFieldValues;
+import com.ipagos.morganainvoices.api.beans.CreateInvoiceWOSending.OrderInformationLineItems;
+import com.ipagos.morganainvoices.api.beans.CreateInvoiceWOSending.AmountDetails;
+import com.ipagos.morganainvoices.api.beans.CreateInvoiceWOSending.OrderInformation;
+import com.ipagos.morganainvoices.api.beans.CreateInvoiceWOSending.InvoiceInformation;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,9 +20,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.stereotype.Controller;
 
-// Importaciones necesarias para manejar fechas
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList; // Usar ArrayList
+import java.util.List; // Usar List
 
 @Controller
 public class FacturaController {
@@ -19,6 +32,10 @@ public class FacturaController {
 
     @Autowired
     private EmailService emailService;
+
+    // Inyección del servicio de Cybersource
+    @Autowired
+    private CreateInvoiceWOSendingService cybersourceService;
 
     @GetMapping("/")
     public String index() {
@@ -31,51 +48,99 @@ public class FacturaController {
             @RequestParam("toEmail") String toEmail,
             @RequestParam("patientName") String patientName,
             @RequestParam("doctorName") String doctorName,
-            @RequestParam("date") String date, // Fecha de la cita (ej: "2025-10-30")
+            @RequestParam("date") String date,
             @RequestParam("time") String time,
             @RequestParam("amount") String amount,
-            @RequestParam("paymentLink") String paymentLink
-            // Eliminamos dueDate del @RequestParam
+            @RequestParam("telefono") String telefono
+            // Eliminamos paymentLink y dueDate de los parámetros
         ) {
 
         log.info("Solicitud recibida para: {}", patientName);
 
         try {
-            // --- INICIO DE LA CORRECCIÓN DE FECHA ---
+            // --- 1. CONSTRUIR EL REQUEST DE CYBERSOURCE ---
+            // (Esta es la lógica que "pegamos" y que faltaba)
+            log.info("Construyendo DTO de Cybersource para generar el enlace...");
+
+            // Cliente
+            CustomerInformation customer = new CustomerInformation();
+            customer.setName(patientName);
+            customer.setEmail(toEmail); // El servicio lo reemplazará por el email de archivo, pero lo enviamos aquí
+
+            // Detalles del Monto
+            AmountDetails amountDetails = new AmountDetails();
+            amountDetails.setTotalAmount(amount);
+            amountDetails.setCurrency("MXN"); // Moneda (Asegúrate que sea la correcta)
+
+            // Línea de Items
+            OrderInformationLineItems lineItem = new OrderInformationLineItems();
+            lineItem.setProductName("Consulta " + doctorName);
+            lineItem.setQuantity(1); // Cantidad fija
+            lineItem.setUnitPrice(amount);
             
-            // 1. Definir el formato de fecha que esperamos (YYYY-MM-DD)
+            List<OrderInformationLineItems> lineItems = new ArrayList<>();
+            lineItems.add(lineItem);
+
+            // Información de la Orden
+            OrderInformation orderInfo = new OrderInformation();
+            orderInfo.setAmountDetails(amountDetails);
+            orderInfo.setLineItems(lineItems);
+
+            // Información de la Factura
+            InvoiceInformation invoiceInfo = new InvoiceInformation();
+            // La fecha de vencimiento de la factura de Cybersource es la fecha de la cita
+            invoiceInfo.setDueDate(date); 
+            invoiceInfo.setDescription("Cita prepagada para " + patientName + " con Dr(a). " + doctorName);
+            invoiceInfo.setAllowPartialPayments(false); // O según tu lógica de negocio
+
+
+            // Construir el Request Principal
+            CreateInvoiceWOSendingRequest csRequest = new CreateInvoiceWOSendingRequest();
+            csRequest.setCustomerInformation(customer);
+            csRequest.setOrderInformation(orderInfo);
+            csRequest.setInvoiceInformation(invoiceInfo);
+
+
+            // --- 2. GENERAR EL ENLACE DE PAGO DE CYBERSOURCE ---
+            log.info("Llamando al servicio de Cybersource para generar el enlace...");
+            CreateInvoiceWOSendingResponse csResponse = cybersourceService.createInvoice(csRequest);
+
+            String realPaymentLink = csResponse.getPaymentLink();
+            
+            if (realPaymentLink == null || realPaymentLink.isEmpty()) {
+                log.error("Cybersource devolvió una respuesta exitosa PERO el enlace de pago vino nulo.");
+                throw new RuntimeException("No se pudo obtener el enlace de pago de Cybersource.");
+            }
+            
+            log.info("Enlace de pago de Cybersource generado exitosamente.");
+
+
+            // --- 3. LÓGICA DE CORREO (Usando el enlace real) ---
+            
+            // (Cálculo de fecha de vencimiento para el *correo*)
             DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
-            
-            // 2. Convertir la fecha de la cita (String) a un objeto LocalDate
             LocalDate appointmentDate = LocalDate.parse(date, formatter);
-            
-            // 3. Calcular la fecha de vencimiento (ej: 1 día antes de la cita)
             LocalDate calculatedDueDate = appointmentDate.minusDays(1);
-            
-            // 4. Convertir la nueva fecha de vencimiento de vuelta a String
-            String dueDateString = calculatedDueDate.format(formatter);
-            
-            // --- FIN DE LA CORRECCIÓN DE FECHA ---
+            String dueDateString = calculatedDueDate.format(formatter); // Fecha para el texto del correo
 
-
-            // LLAMADA AL SERVICIO DE CORREO (ahora con la fecha correcta)
+            // LLAMADA AL SERVICIO DE CORREO (ahora con el enlace real)
             emailService.sendAppointmentConfirmation(
                 toEmail,
                 patientName,
                 doctorName,
-                date, // Fecha de la cita
-                time, // Hora de la cita
+                date, 
+                time, 
                 amount,
-                paymentLink,
-                dueDateString // La fecha de vencimiento calculada
+                realPaymentLink, // <-- AQUÍ SE "PEGA" EL ENLACE REAL
+                dueDateString 
             );
 
             return ResponseEntity.status(201).body("Factura enviada y correo de confirmación iniciado.");
 
         } catch (Exception e) {
-            log.error("Error al procesar la solicitud o enviar el correo: {}", e.getMessage(), e);
+            // Esto capturará errores de Cybersource (ej. 401 Bad Credentials) O errores de SMTP
+            log.error("Error al procesar la solicitud (Cybersource o Correo): {}", e.getMessage(), e);
             return ResponseEntity.status(500).body("Error interno: " + e.getMessage());
         }
     }
 }
-
