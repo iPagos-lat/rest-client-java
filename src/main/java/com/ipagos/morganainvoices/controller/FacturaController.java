@@ -9,7 +9,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.stereotype.Controller;
 
 // Usamos @Controller para poder usar @GetMapping para servir HTML (vistas)
-@Controller
+// Si esta clase SOLO maneja API REST, es mejor usar @RestController
+@Controller 
 public class FacturaController {
 
     private static final Logger log = LoggerFactory.getLogger(FacturaController.class);
@@ -30,6 +31,9 @@ public class FacturaController {
     @PostMapping("/enviar-factura")
     @ResponseBody // Indica que este método devuelve datos (no una vista)
     public ResponseEntity<String> enviarFactura(
+            // --- INICIO DE LA CORRECCIÓN ---
+            // Cambiamos @RequestBody por @RequestParam para que coincida
+            // con el formato 'application/x-www-form-urlencoded' enviado por el HTML.
             @RequestParam("toEmail") String toEmail,
             @RequestParam("patientName") String patientName,
             @RequestParam("doctorName") String doctorName,
@@ -37,7 +41,9 @@ public class FacturaController {
             @RequestParam("time") String time,
             @RequestParam("amount") String amount,
             @RequestParam("paymentLink") String paymentLink,
-            @RequestParam("dueDate") String dueDate) {
+            @RequestParam("dueDate") String dueDate
+            // --- FIN DE LA CORRECCIÓN ---
+        ) {
 
         log.info("Solicitud recibida para: {}", patientName);
 
@@ -67,3 +73,4 @@ public class FacturaController {
         }
     }
 }
+
