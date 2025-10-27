@@ -8,6 +8,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import com.ipagos.morganainvoices.api.beans.CreateInvoiceWOSending.EmailRequest;
+
 @Service
 public class EmailServiceImpl implements EmailService {
 
@@ -140,4 +142,10 @@ public class EmailServiceImpl implements EmailService {
 
         return template;
     }
+
+	@Override
+	public boolean sendEmail(EmailRequest request) {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }
