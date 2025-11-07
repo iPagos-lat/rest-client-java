@@ -7,7 +7,6 @@ import java.util.Map; // Import Map
 @Data
 @Builder
 public class CreateInvoiceWOSendingResponse {
-
-    private Map<String, Object> result; // Use Map<String, Object>
+    private Map<String, Object> result; // Usa Map<String, Object>
     private String paymentLink;
 }

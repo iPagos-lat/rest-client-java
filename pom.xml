@@ -7,16 +7,12 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.8</version> 
-        <relativePath/>
+        <version>3.2.8</version> <relativePath/>
     </parent>
-
     <groupId>com.ipagos</groupId>
     <artifactId>morganainvoices</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>morganainvoices</name>
-    <description>Servicio de creación de ligas de pago para médicos especialistas</description>
-
     <properties>
         <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -26,27 +22,35 @@
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
         
         <dependency>
+            <groupId>com.cybersource</groupId>
+            <artifactId>cybersource-rest-client-java</artifactId>
+            <version>0.0.82</version> 
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-joda</artifactId>
         </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-rest</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-freemarker</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
         
+        <dependency>
+			<groupId>com.twilio.sdk</groupId>
+			<artifactId>twilio</artifactId>
+			<version>11.0.2</version> 
+		</dependency>
+		
+		<dependency>
+			<groupId>jakarta.annotation</groupId>
+			<artifactId>jakarta.annotation-api</artifactId>
+			<version>2.1.1</version>
+		</dependency>
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -57,40 +61,25 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-
-       <dependency>
-            <groupId>com.cybersource</groupId>
-            <artifactId>cybersource-rest-client-java</artifactId>
-            <version>0.0.82</version> <exclusions>
-                </exclusions>
-        </dependency>
         
-        <!-- ✅ DEPENDENCIAS CRÍTICAS PARA JPA/HIBERNATE -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
+            <artifactId>spring-boot-starter-data-rest</artifactId>
         </dependency>
-        
-        <!-- EJEMPLO: Si usas MySQL, necesitas el driver -->
         <dependency>
-            <groupId>com.mysql</groupId>
-            <artifactId>mysql-connector-j</artifactId>
-            <scope>runtime</scope>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-freemarker</artifactId>
         </dependency>
-        
-        <!-- Nota: Ya tienes lombok y las demás dependencias -->
-        
+		
+		<dependency>
+			<groupId>com.cybersource</groupId>
+			<artifactId>AuthenticationSdk</artifactId>
+			<version>0.0.39</version>
+		</dependency>
     </dependencies>
 
     <build>
         <plugins>
-           <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>3.3.1</version>  <configuration>
-                    <encoding>UTF-8</encoding>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -100,7 +89,6 @@
                     <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
-            
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

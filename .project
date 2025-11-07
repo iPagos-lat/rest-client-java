@@ -20,4 +20,11 @@
 		<nature>org.eclipse.jdt.core.javanature</nature>
 		<nature>org.eclipse.m2e.core.maven2Nature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>morganainvoices</name>
+			<type>2</type>
+			<location>C:/Users/ernes/Java Maven/morganainvoices/src/main/java/com/ipagos/morganainvoices</location>
+		</link>
+	</linkedResources>
 </projectDescription>
